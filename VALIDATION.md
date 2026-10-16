@@ -20,6 +20,8 @@ Peak measurements below are PyTorch allocated VRAM and process RSS sampled at
 | Browser batch, image one (full caption) | 512×512 | Official INT8 | 9.28 | 5.923 |
 | Browser batch, image two (full caption) | 512×512 | Official INT8 | 9.43 | 5.923 |
 | Ten-reference tensor path, full caption supplied | 512×512 | GGUF Q4 | 25.20 | 4.783 |
+| Browser edit, assistant enabled | 768×768 | Automatic → BF16 image | 56.37 | See per-image sidecar |
+| Repeat browser edit, same caption reused | 768×768 | Automatic → BF16 image | 14.46 | See per-image sidecar |
 
 Every image has its own JSON sidecar containing exact model, seed, caption,
 timings by stage, measured VRAM/reserved VRAM and peak process RSS. The first
@@ -38,13 +40,22 @@ CUDA 12.8 uses a working but slower fallback. CUDA 13 approval/testing is pendin
 
 ## Reliability checks
 
-- Six automated tests passed: stable workspace token restoration; coordinate
+- Eight automated tests passed: stable workspace token restoration; coordinate
   conversion/validation; protected/unsafe archive paths including case variants;
-  refusal to install private data; blank password clears authentication; UI builds.
+  refusal to install private data; blank password clears authentication; UI builds;
+  portrait reference dimensions; imports do not start/recover the queue.
 - The actual browser completed a generation through the queue.
 - A page reload restored the edited prompt after correcting a Gradio State/JS
   transport issue. There is now exactly one load handler and a hidden textbox
   transports the localStorage token to server State.
+- Reference upload in the actual browser opened its thumbnail preview and chose
+  matching dimensions. Uploads live outside the disposable Gradio cache.
+- Repeating the same reference edit reused the real expanded caption: 56.37s
+  first run versus 14.46s repeat. Changing instructions, references or assistant
+  file invalidates the cache; Expand prompt only explicitly forces a fresh one.
+- Queue recovery/consumer initialization occurs only after the owning server's
+  instance check, not on module import. Tests and a duplicate launch cannot reset
+  another server's running job state.
 - A real browser Stop cancelled its owned job and preserved outputs. A later
   two-image batch completed, one worker at a time. GPU returned to 480MiB idle.
 - A deliberately restricted test-process CUDA allocator produced the friendly

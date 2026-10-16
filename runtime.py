@@ -1,5 +1,6 @@
 """One persistent queue, one disposable CUDA worker; browser-owned workspaces."""
 import atexit
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -22,6 +23,7 @@ PENDING = queue.Queue()
 PROCESS = None
 ACTIVE = None
 STOPPING = False
+QUEUE_STARTED = False
 
 
 def token(value):
@@ -136,6 +138,19 @@ def execute(job_id):
     global PROCESS
     record = read_json(job_path(job_id))
     request = record["request"]
+    signature = None
+    if request.get("enhance", True):
+        from model_manager import FILES
+        paths = [Path(p) for p in request.get("references", [])]
+        paths.append(Path(request["models"]) / FILES["upsampler"])
+        identity = {"prompt": request["prompt"], "boxes": request.get("boxes"),
+                    "files": [(str(p), p.stat().st_size, p.stat().st_mtime_ns) if p.is_file() else (str(p), None, None) for p in paths]}
+        signature = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+        cached = workspace(record["owner"]).get("prompt_cache", {})
+        if request.get("action") != "enhance" and cached.get("signature") == signature and cached.get("caption"):
+            request.update(user_prompt=request["prompt"], prompt=cached["caption"],
+                           enhance=False, boxes=None, prompt_assistant_reused=True)
+            update(job_id, message="Reusing your unchanged expanded caption", caption=cached["caption"])
     count = int(request.get("count", 1))
     outputs = []
     for index in range(count):
@@ -165,6 +180,8 @@ def execute(job_id):
                     update(job_id, message=f"Image {index + 1}/{count} · {event['message']}")
                 elif event["type"] == "caption":
                     update(job_id, caption=event["caption"])
+                    if signature:
+                        save_workspace(record["owner"], prompt_cache={"signature": signature, "caption": event["caption"]})
                 elif event["type"] == "error":
                     error = event["message"]
                 elif event["type"] == "result":
@@ -239,12 +256,21 @@ def stop_owned_process():
 
 
 atexit.register(stop_owned_process)
-# A restart must not pretend an interrupted job is still running. No files removed.
-for path in (ROOT / "jobs").glob("*.json"):
-    if path.stem.endswith("_request"):
-        continue
-    previous = read_json(path)
-    if previous.get("state") in ("queued", "running"):
-        previous.update(state="error", message="Interrupted by an app restart. Submit again to retry.")
-        write_json(path, previous)
-threading.Thread(target=consume, daemon=True).start()
+
+
+def start_queue():
+    """Only the owning server calls this, after its single-instance check."""
+    global QUEUE_STARTED
+    with GUARD:
+        if QUEUE_STARTED:
+            return
+        # A real restart must not pretend an interrupted job is still running.
+        for path in (ROOT / "jobs").glob("*.json"):
+            if path.stem.endswith("_request"):
+                continue
+            previous = read_json(path)
+            if previous.get("state") in ("queued", "running"):
+                previous.update(state="error", message="Interrupted by an app restart. Submit again to retry.")
+                write_json(path, previous)
+        QUEUE_STARTED = True
+        threading.Thread(target=consume, daemon=True).start()

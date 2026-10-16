@@ -255,7 +255,6 @@ def cancel_all(key):
 
 
 def reuse(key, selected, evt: gr.SelectData):
-    path = evt.value.get("image", {}).get("path") if isinstance(evt.value, dict) else None
     # Gallery event shapes vary; use the index against our own saved history.
     entries = [p for r in jobs.history(key) for p in r.get("outputs", []) if jobs.owned(p)]
     index = int(evt.index)
@@ -383,7 +382,7 @@ def build_demo():
                             enhance = gr.Checkbox(value=True, label="Expand my request with the local prompt assistant")
                             caption = gr.Textbox(label="Expanded full-scene caption · editable", lines=6)
                             expand = gr.Button("Expand prompt only")
-                            gr.Markdown("To generate your edited caption unchanged, turn off expansion. Short unexpanded prompts give weaker results.")
+                            gr.Markdown("Unchanged requests reuse their expanded caption for speed. Expand prompt only forces a fresh expansion. To use your edited caption unchanged, turn expansion off.")
                             with gr.Row():
                                 seed = gr.Number(value=-1, precision=0, label="Seed · −1 random")
                                 count = gr.Number(value=1, minimum=1, precision=0, label="Images per job · sequential")
@@ -510,6 +509,7 @@ if __name__ == "__main__":
         except (ValueError, OSError, psutil.NoSuchProcess):
             pass
     lock.write_text(str(os.getpid()))
+    jobs.start_queue()
     network.install_upload_disconnect_handling()
     settings = network.read_settings()
     mode = "public" if args.public else settings["mode"]

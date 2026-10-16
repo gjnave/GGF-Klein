@@ -48,6 +48,8 @@ not hard inpaint masks: the model may change pixels outside a box.
 
 One GPU job runs at a time. New requests queue; batches run sequentially and
 reuse one expanded caption. Stop cancels your browser's active/queued jobs.
+Unchanged requests also reuse their expanded caption on later runs; use Expand
+prompt only to force a fresh expansion.
 Closing/reloading the page does not stop work. The same browser and URL restore
 your workspace; a new public hostname is a different browser origin.
 

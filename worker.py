@@ -81,7 +81,9 @@ def run():
         paths["image"] = models / OPTIONAL[precision][2]
     elif precision != "int8":
         raise ValueError("This worker currently supports official INT8 or BF16, not that model format.")
-    for key in ("image", "text", "vae") + (("upsampler",) if request.get("enhance", True) else ()):
+    required = (("upsampler",) if request.get("action") == "enhance" else
+                ("image", "text", "vae") + (("upsampler",) if request.get("enhance", True) else ()))
+    for key in required:
         if not paths[key].is_file():
             raise FileNotFoundError(f"Missing {key}: {paths[key]}. Open Settings / Models to download.")
     images = []
@@ -185,6 +187,7 @@ def run():
             "torch": torch.__version__, "cuda": torch.version.cuda,
             "gpu": torch.cuda.get_device_name(0), "stages": stages,
             "ai_generated": True,
+            "prompt_assistant_reused": bool(request.get("prompt_assistant_reused")),
         }
         metadata = PngImagePlugin.PngInfo()
         metadata.add_text("GGF generation", json.dumps(record))
