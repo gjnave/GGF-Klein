@@ -367,7 +367,7 @@ def build_demo():
                     with gr.Column(min_width=280):
                         upload = gr.File(label="Reference images · optional · up to 10", file_types=["image"], file_count="multiple", type="filepath", height=120)
                         with gr.Accordion("View / reorder references", open=False) as reference_group:
-                            gallery = gr.Gallery(label="References · select to reorder", columns=3, rows=1, height=210, object_fit="contain", interactive=False, buttons=["fullscreen"])
+                            gallery = gr.Gallery(label="References · select to reorder", columns=3, rows=1, height=210, object_fit="contain", interactive=False, buttons=["fullscreen"], elem_id="reference-gallery")
                             with gr.Row():
                                 earlier, later, remove = gr.Button("← Earlier"), gr.Button("Later →"), gr.Button("Remove selected")
                         prompt = gr.Textbox(label="What would you like to create or change?", lines=4)

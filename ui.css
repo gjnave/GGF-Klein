@@ -16,4 +16,6 @@ option,[role=option] {background:#111c2f!important;color:#e8eef9!important}
 #score-editor textarea {font-family:Consolas,monospace;font-size:14px!important}
 footer {display:none!important} #powered {text-align:center;color:#9baec8;font-size:12px;margin-top:15px}
 .label-wrap {box-sizing:border-box!important;max-width:100%!important;overflow-x:hidden!important;color:#e8eef9!important;background:#111c2f!important}
+#reference-gallery .thumbnail-item {height:160px!important;aspect-ratio:auto!important}
+#reference-gallery .thumbnail-item img {height:100%!important;width:100%!important;object-fit:contain!important}
 @media(max-width:600px) {#hero img {width:45px;height:45px} [role=tab] {flex:1;padding:10px 6px!important} #create-row {flex-direction:column} #create-row>.column {width:100%!important;min-width:0!important}}
