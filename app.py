@@ -63,6 +63,7 @@ def download_models(token, precision="int8"):
             return "Model download is already running."
         DOWNLOAD.update(running=True, message="Downloading and verifying the official INT8 model set…")
     directory = jobs.config()["models"]
+    components = list(FILES) if precision == "int8" else ["text", "vae", "upsampler", precision]
 
     def run():
         try:
@@ -72,10 +73,19 @@ def download_models(token, precision="int8"):
             with (ROOT / "logs/model-download.log").open("w", encoding="utf-8") as log:
                 process = subprocess.Popen(
                     [sys.executable, "-u", str(ROOT / "model_manager.py"), "--directory", directory,
-                     "--components", *FILES, *([precision] if precision != "int8" else [])],
-                    stdout=log, stderr=subprocess.STDOUT, env=env, cwd=ROOT,
+                     "--components", *components],
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, cwd=ROOT,
+                    text=True, encoding="utf-8", errors="replace",
                     creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
                 )
+                for line in process.stdout:
+                    log.write(line)
+                    log.flush()
+                    if line.startswith("__GGFDOWN__"):
+                        progress = json.loads(line[11:])
+                        DOWNLOAD["message"] = f"Downloading {progress['file']} · {progress['percent']}%"
+                    elif line.startswith(("Downloading/verifying", "Verified")):
+                        DOWNLOAD["message"] = line.strip()
                 code = process.wait()
             DOWNLOAD["message"] = ("All four components downloaded and SHA-256 verified." if code == 0 else
                 "Download stopped. Check access/token and available disk space, then retry. Partial downloads are kept; see logs/model-download.log.")
@@ -92,7 +102,8 @@ def restore(value):
     refs = [p for p in data.get("references", []) if jobs.owned(p, "inputs")]
     return (key, data.get("prompt", ""), data.get("width", 768), data.get("height", 768),
             data.get("seed", -1), data.get("count", 1), refs, [(p, f"Reference {i + 1}") for i, p in enumerate(refs)],
-            data.get("caption", ""), data.get("enhance", True), data.get("boxes", []))
+            data.get("caption", ""), data.get("enhance", True), data.get("boxes", []),
+            gr.update(open=bool(refs)), "Custom" if refs or (data.get("width", 768), data.get("height", 768)) != (768, 768) else "Square")
 
 
 def save_controls(key, prompt, width, height, seed, count, caption, enhance, boxes):
@@ -108,7 +119,17 @@ def import_refs(key, files, current):
         raise gr.Error("Use at most ten references. Remove one from the list before adding more.")
     references = list(current or []) + [jobs.retain_image(path) for path in files]
     jobs.save_workspace(key, references=references)
-    return references, [(p, f"Reference {i + 1}") for i, p in enumerate(references)], None
+    w, h = reference_dimensions(references)
+    return references, [(p, f"Reference {i + 1}") for i, p in enumerate(references)], None, gr.update(open=True), "Custom", w, h
+
+
+def reference_dimensions(references):
+    if not references:
+        return 768, 768
+    with Image.open(references[0]) as image:
+        w, h = image.size
+    scale = min(1, (1024 * 1024 / (w * h)) ** 0.5)
+    return max(64, round(w * scale / 16) * 16), max(64, round(h * scale / 16) * 16)
 
 
 def reorder(key, refs, index, direction):
@@ -246,7 +267,8 @@ def use_result(key, path, refs):
         raise ValueError("Select an image in History first.")
     new_ref = jobs.retain_image(path)
     jobs.save_workspace(key, references=[new_ref])
-    return [new_ref], [(new_ref, "Reference 1")], gr.update(selected="create")
+    w, h = reference_dimensions([new_ref])
+    return [new_ref], [(new_ref, "Reference 1")], gr.update(selected="create"), gr.update(open=True), "Custom", w, h
 
 
 def diagnostic():
@@ -345,7 +367,7 @@ def build_demo():
                 with gr.Row(elem_id="create-row", equal_height=False):
                     with gr.Column(min_width=280):
                         upload = gr.File(label="Reference images · optional · up to 10", file_types=["image"], file_count="multiple", type="filepath", height=120)
-                        with gr.Accordion("View / reorder references", open=False):
+                        with gr.Accordion("View / reorder references", open=False) as reference_group:
                             gallery = gr.Gallery(label="References · select to reorder", columns=3, height=210, interactive=False, buttons=["fullscreen"])
                             with gr.Row():
                                 earlier, later, remove = gr.Button("← Earlier"), gr.Button("Later →"), gr.Button("Remove selected")
@@ -393,6 +415,7 @@ def build_demo():
             with gr.Tab("Settings", id="settings"):
                 gr.Markdown("### Models & performance")
                 model_text = gr.Markdown(model_status())
+                gr.Timer(1).tick(model_status, outputs=model_text, queue=False, show_progress="hidden")
                 gr.Button("Refresh model status").click(model_status, outputs=model_text, queue=False)
                 gr.Markdown("[Accept official model access on Hugging Face](https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy), then provide a read token if needed. Downloads go directly to your PC; no models are in the installer.")
                 hf_token = gr.Textbox(label="Hugging Face read token · optional if already signed in · not saved", type="password")
@@ -448,16 +471,16 @@ def build_demo():
         controls_list = [prompt, width, height, seed, count, caption, enhance, boxes]
         # State inputs are server-owned: Gradio ignores JS replacements for them.
         # A hidden textbox transports the localStorage token to this one restore handler.
-        demo.load(restore, inputs=browser_token, outputs=[key, prompt, width, height, seed, count, refs, gallery, caption, enhance, boxes],
+        demo.load(restore, inputs=browser_token, outputs=[key, prompt, width, height, seed, count, refs, gallery, caption, enhance, boxes, reference_group, shape],
                   js="(key) => {let k=localStorage.getItem('ggf-klein-workspace');if(!k){let b=new Uint8Array(24);crypto.getRandomValues(b);k=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');localStorage.setItem('ggf-klein-workspace',k);}return [k];}")
         for control in controls_list:
             control.change(save_controls, [key, *controls_list], queue=False, api_name=False)
-        upload.upload(import_refs, [key, upload, refs], [refs, gallery, upload], queue=False)
+        upload.upload(import_refs, [key, upload, refs], [refs, gallery, upload, reference_group, shape, width, height], queue=False)
         gallery.select(select_reference, outputs=selected_ref, queue=False)
         earlier.click(lambda k, r, i: reorder(k, r, i, -1), [key, refs, selected_ref], [refs, gallery, selected_ref], queue=False)
         later.click(lambda k, r, i: reorder(k, r, i, 1), [key, refs, selected_ref], [refs, gallery, selected_ref], queue=False)
         remove.click(lambda k, r, i: reorder(k, r, i, "remove"), [key, refs, selected_ref], [refs, gallery, selected_ref], queue=False)
-        shape.change(lambda v, w, h: {"Square": (768, 768), "Landscape": (1024, 768), "Portrait": (768, 1024)}.get(v, (w, h)), [shape, width, height], [width, height], queue=False)
+        shape.input(lambda v, w, h: {"Square": (768, 768), "Landscape": (1024, 768), "Portrait": (768, 1024)}.get(v, (w, h)), [shape, width, height], [width, height], queue=False)
         apply_preset.click(lambda p, name: (p.rstrip() + "\n" + PRESETS[name]).strip(), [prompt, preset], prompt, queue=False)
         draw_layout.click(safe(preview_layout), [boxes, width, height], layout, queue=False)
         layout.select(select_box, [boxes, width, height, element_description, corner], [boxes, corner, layout, layout_status], queue=False)
@@ -466,7 +489,7 @@ def build_demo():
         expand.click(safe(lambda *v: start(*v, "enhance")), inputs, [activity, output, downloads, compare], queue=False)
         stop.click(safe(cancel_all), key, activity, queue=False)
         history.select(reuse, [key, selected_result], selected_result, queue=False)
-        use.click(safe(use_result), [key, selected_result, refs], [refs, gallery, tabs], queue=False)
+        use.click(safe(use_result), [key, selected_result, refs], [refs, gallery, tabs, reference_group, shape, width, height], queue=False)
         gr.Timer(1).tick(poll, [key, last], [activity, output, downloads, compare, caption, history, queue_view, last], queue=False, show_progress="hidden")
     return demo.queue(default_concurrency_limit=4)
 

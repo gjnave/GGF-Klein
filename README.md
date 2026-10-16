@@ -61,7 +61,7 @@ Settings checks source-repository revisions. Update & restart downloads a
 host-generated archive from Codeberg, falling back to GitHub. It backs up source,
 updates dependencies and preserves models, settings, workspaces and outputs.
 UPDATE.bat provides the same flow with the app closed. No maintained source ZIP
-is required for updates. Publication URLs are provisional until release verification.
+is required for updates. Source mirror verification is recorded in the handoff.
 
 ## Source installation / development
 

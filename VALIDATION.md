@@ -19,6 +19,7 @@ Peak measurements below are PyTorch allocated VRAM and process RSS sampled at
 | Assistant + locked layout coordinates | 512×512 | Official INT8 | 41.11 | 16.882 |
 | Browser batch, image one (full caption) | 512×512 | Official INT8 | 9.28 | 5.923 |
 | Browser batch, image two (full caption) | 512×512 | Official INT8 | 9.43 | 5.923 |
+| Ten-reference tensor path, full caption supplied | 512×512 | GGUF Q4 | 25.20 | 4.783 |
 
 Every image has its own JSON sidecar containing exact model, seed, caption,
 timings by stage, measured VRAM/reserved VRAM and peak process RSS. The first
@@ -68,8 +69,9 @@ CUDA 12.8 uses a working but slower fallback. CUDA 13 approval/testing is pendin
 Physical 8GB/12GB/16GB/Blackwell systems, CUDA 13, FP8 and NVFP4, alternative
 text-encoder precision, arbitrary extreme dimensions, prompt/model quality over
 a large benchmark, long-duration soak testing, and live release mirrors.
-Ten-reference tensor-path test is being recorded separately; repeated copies
-are a capacity smoke test, not evidence of ten distinct identities/composition.
+Ten-reference testing used repeated copies of the same generated image: it
+proves the tensor path, not ten distinct identities/composition or a ten-image
+assistant expansion. One-reference assistant editing was tested.
 Public phone transport and a real Android upload need an end-user check.
 
 ## Reproduce
