@@ -6,7 +6,7 @@ body {background:#07101f!important}
 #hero p {margin:6px 0;color:#e8eef9} #hero .eyebrow {color:#f5b942;font-size:12px;letter-spacing:2px;font-weight:700}
 #hero img {width:65px;height:65px;border-radius:12px;object-fit:contain}
 #hero a, a {color:#9dcbfa!important} #hero nav {display:flex;gap:15px;flex-wrap:wrap;font-size:13px}
-#activity {border:1px solid #507b76;border-radius:10px;padding:12px;background:#14283a;overflow-wrap:anywhere}
+#activity, #generate-status {border:1px solid #507b76;border-radius:10px;padding:12px;background:#14283a;overflow-wrap:anywhere}
 [role=tablist] {gap:6px!important;flex-wrap:wrap!important} [role=tab] {color:#e8eef9!important;background:#192d47!important;border:1px solid #435570!important;border-radius:7px!important;min-height:44px;padding:10px 14px!important}
 [role=tab].selected,[role=tab][aria-selected=true] {background:#f5b942!important;color:#091425!important;font-weight:700!important}
 button.primary {background:#f5b942!important;color:#091425!important;font-weight:700!important}

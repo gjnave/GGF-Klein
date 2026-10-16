@@ -224,6 +224,16 @@ def start(key, prompt, width, height, seed, count, caption, enhance, refs, rows,
     return "Queued. This browser's previous results remain in History.", [], [], None
 
 
+def submit_from_ui(*values, action):
+    """Show submission failures beside Generate, not only in an offscreen toast."""
+    try:
+        message, output, downloads, compare = start(*values, action)
+        return message, message, output, downloads, compare
+    except (ValueError, OSError, RuntimeError) as error:
+        message = f"**Could not start:** {error}"
+        return message, message, gr.skip(), gr.skip(), gr.skip()
+
+
 def poll(key, last):
     record = jobs.status(key) if key else None
     if record is None:
@@ -243,6 +253,11 @@ def poll(key, last):
     history = [(p, r["request"]["prompt"][:100]) for r in all_records for p in r.get("outputs", []) if jobs.owned(p)]
     queue_rows = [[r["id"][:8], r["state"], r["request"]["prompt"][:100]] for r in all_records[:30]]
     return label, paths, paths, compare, record.get("caption", gr.skip()), history, queue_rows, fingerprint
+
+
+def poll_from_ui(key, last):
+    status, *outputs = poll(key, last)
+    return status, status, *outputs
 
 
 def cancel_all(key):
@@ -398,6 +413,7 @@ def build_demo():
                             layout_status = gr.Markdown("Preview the guide, then tap two opposite corners to add a box. You can also edit the table.")
                             layout = gr.Image(label="Layout guide", interactive=False, height=320)
                         generate = gr.Button("Generate image / add to queue", variant="primary")
+                        generate_status = gr.Markdown("Ready. Describe an image, then press Generate.", elem_id="generate-status")
                         stop = gr.Button("Stop my running & queued jobs", variant="stop")
                     with gr.Column(min_width=280):
                         output = gr.Gallery(label="Your images · expand for fullscreen", height=540, columns=1,
@@ -471,7 +487,7 @@ def build_demo():
         # State inputs are server-owned: Gradio ignores JS replacements for them.
         # A hidden textbox transports the localStorage token to this one restore handler.
         demo.load(restore, inputs=browser_token, outputs=[key, prompt, width, height, seed, count, refs, gallery, caption, enhance, boxes, reference_group, shape],
-                  js="(key) => {let k=localStorage.getItem('ggf-klein-workspace');if(!k){let b=new Uint8Array(24);crypto.getRandomValues(b);k=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');localStorage.setItem('ggf-klein-workspace',k);}return [k];}")
+                  js="(key) => {let k;try{k=localStorage.getItem('ggf-klein-workspace');}catch(e){}if(!k){let b=new Uint8Array(24);crypto.getRandomValues(b);k=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');try{localStorage.setItem('ggf-klein-workspace',k);}catch(e){}}return [k];}")
         for control in controls_list:
             control.change(save_controls, [key, *controls_list], queue=False, api_name=False)
         upload.upload(import_refs, [key, upload, refs], [refs, gallery, upload, reference_group, shape, width, height], queue=False)
@@ -484,12 +500,12 @@ def build_demo():
         draw_layout.click(safe(preview_layout), [boxes, width, height], layout, queue=False)
         layout.select(select_box, [boxes, width, height, element_description, corner], [boxes, corner, layout, layout_status], queue=False)
         inputs = [key, *controls_list[:5], caption, enhance, refs, boxes]
-        generate.click(safe(lambda *v: start(*v, "generate")), inputs, [activity, output, downloads, compare], queue=False)
-        expand.click(safe(lambda *v: start(*v, "enhance")), inputs, [activity, output, downloads, compare], queue=False)
-        stop.click(safe(cancel_all), key, activity, queue=False)
+        generate.click(lambda *v: submit_from_ui(*v, action="generate"), inputs, [activity, generate_status, output, downloads, compare], queue=False)
+        expand.click(lambda *v: submit_from_ui(*v, action="enhance"), inputs, [activity, generate_status, output, downloads, compare], queue=False)
+        stop.click(safe(lambda k: (lambda message: (message, message))(cancel_all(k))), key, [activity, generate_status], queue=False)
         history.select(reuse, [key, selected_result], selected_result, queue=False)
         use.click(safe(use_result), [key, selected_result, refs], [refs, gallery, tabs, reference_group, shape, width, height], queue=False)
-        gr.Timer(1).tick(poll, [key, last], [activity, output, downloads, compare, caption, history, queue_view, last], queue=False, show_progress="hidden")
+        gr.Timer(1).tick(poll_from_ui, [key, last], [activity, generate_status, output, downloads, compare, caption, history, queue_view, last], queue=False, show_progress="hidden")
     return demo.queue(default_concurrency_limit=4)
 
 

@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 from PIL import Image
 
@@ -63,6 +64,19 @@ class AppTests(unittest.TestCase):
 
     def test_ui_builds(self):
         self.assertGreater(len(app.build_demo().blocks), 80)
+
+    def test_submission_feedback_visible_beside_button(self):
+        with patch.object(app, "start", return_value=("Queued", [], [], None)):
+            self.assertEqual(app.submit_from_ui(action="generate"), ("Queued", "Queued", [], [], None))
+        with patch.object(app, "start", side_effect=ValueError("Describe an image")):
+            result = app.submit_from_ui(action="generate")
+        self.assertEqual(result[0], result[1])
+        self.assertIn("Could not start", result[1])
+        self.assertIn("Describe an image", result[1])
+
+    def test_progress_updates_both_status_locations(self):
+        with patch.object(app, "poll", return_value=("RUNNING", 1, 2, 3, 4, 5, 6, 7)):
+            self.assertEqual(app.poll_from_ui("browser", ""), ("RUNNING", "RUNNING", 1, 2, 3, 4, 5, 6, 7))
 
 
 if __name__ == "__main__":
