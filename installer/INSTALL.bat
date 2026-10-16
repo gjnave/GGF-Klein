@@ -2,15 +2,9 @@
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
 title Get Going Fast - GGF Flux 3 Klein - Dream Setup
-if exist "about.nfo" type "about.nfo"
 if exist "disclaimer.md" type "disclaimer.md"
-echo.
-echo GGF Flux 3 Klein - Dream, Windows 64-bit, NVIDIA GPU.
-echo Python is installed privately by UV. No global Python or ComfyUI is used.
-echo Install a current NVIDIA R580 or newer driver. RTX 20/30/40/50 architectures supported.
-echo Setup installs CUDA 13 PyTorch wheels, not the CUDA Toolkit. GPU memory needs vary.
-echo Default INT8 models need about 21 GB; allow additional space for Python and dependencies.
 if not defined GGF_UNATTENDED pause
+if exist "about.nfo" type "about.nfo"
 set "PYTHONUTF8=1"
 set "APP=%CD%\GGF-Klein"
 set "CACHE=%CD%\installer-cache"
