@@ -367,7 +367,7 @@ def build_demo():
                     with gr.Column(min_width=280):
                         upload = gr.File(label="Reference images · optional · up to 10", file_types=["image"], file_count="multiple", type="filepath", height=120)
                         with gr.Accordion("View / reorder references", open=False) as reference_group:
-                            gallery = gr.Gallery(label="References · select to reorder", columns=3, height=210, interactive=False, buttons=["fullscreen"])
+                            gallery = gr.Gallery(label="References · select to reorder", columns=3, rows=1, height=210, object_fit="contain", interactive=False, buttons=["fullscreen"])
                             with gr.Row():
                                 earlier, later, remove = gr.Button("← Earlier"), gr.Button("Later →"), gr.Button("Remove selected")
                         prompt = gr.Textbox(label="What would you like to create or change?", lines=4)
@@ -406,7 +406,7 @@ def build_demo():
                         with gr.Accordion("Before & after", open=False):
                             compare = gr.ImageSlider(label="Reference / generated image", interactive=False)
             with gr.Tab("History & queue", id="history"):
-                history = gr.Gallery(label="Saved images · select one to edit", columns=3, height=550,
+                history = gr.Gallery(label="Saved images · select one to edit", columns=3, height=550, object_fit="contain",
                                      interactive=False, buttons=["download", "fullscreen"])
                 use = gr.Button("Use selected image as my new reference", variant="primary")
                 queue_view = gr.Dataframe(headers=["Job", "State", "Request"], interactive=False, label="This browser's jobs")
