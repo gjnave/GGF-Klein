@@ -8,7 +8,7 @@ import time
 
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 from huggingface_hub import HfApi, hf_hub_download
-from huggingface_hub.errors import GatedRepoError
+from huggingface_hub.errors import HfHubHTTPError
 from tqdm import tqdm
 
 ROOT = Path(__file__).resolve().parent
@@ -65,14 +65,8 @@ def download(directory, components=None):
         sha = record.lfs.sha256
         manifest[name] = {"file": filename, "bytes": record.size, "sha256": sha, "repository": repo, "revision": revision}
         print(f"Downloading/verifying {name}: {filename}", flush=True)
-        try:
-            path = Path(hf_hub_download(repo, filename, revision=revision, local_dir=directory,
-                                      tqdm_class=DownloadProgress))
-        except GatedRepoError:
-            raise SystemExit(
-                f"Accept access at https://huggingface.co/{repo}, then sign in to that "
-                "account with hf auth login. Partial downloads are preserved."
-            ) from None
+        path = Path(hf_hub_download(repo, filename, revision=revision, local_dir=directory,
+                                  tqdm_class=DownloadProgress))
         if path.stat().st_size != record.size or digest(path) != sha:
             raise RuntimeError(f"Integrity check failed: {path}. File preserved for inspection.")
         print(f"Verified {name}", flush=True)
@@ -81,9 +75,33 @@ def download(directory, components=None):
         }, indent=2), encoding="utf-8")
 
 
+def verify_required(directory):
+    """Installation is complete only when every default file matches its pin."""
+    directory = Path(directory).resolve()
+    manifest = json.loads((ROOT / "model-manifest.json").read_text(encoding="utf-8"))["components"]
+    for name, filename in FILES.items():
+        record = manifest[name]
+        path = directory / filename
+        if not path.is_file() or path.stat().st_size != record["bytes"] or digest(path) != record["sha256"]:
+            raise RuntimeError(f"Required model missing or incomplete: {path}. Rerun INSTALL.bat to resume.")
+        print(f"Required model verified: {name}", flush=True)
+    print("All four required models are ready.", flush=True)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--directory", default=str(ROOT / "models"))
     parser.add_argument("--components", nargs="*", choices=list(FILES) + list(OPTIONAL))
+    parser.add_argument("--verify-only", action="store_true")
     args = parser.parse_args()
-    download(args.directory, args.components)
+    try:
+        if args.verify_only:
+            verify_required(args.directory)
+        else:
+            download(args.directory, args.components)
+    except HfHubHTTPError as error:
+        if error.response is not None and error.response.status_code in (401, 403):
+            raise SystemExit(f"Model access is required. Accept/request access at https://huggingface.co/{REPO}, "
+                             "then run .venv\\Scripts\\hf.exe auth login with that account and rerun INSTALL.bat. "
+                             "Setup is incomplete; existing files and partial downloads are preserved.") from None
+        raise

@@ -21,6 +21,10 @@ older architectures are not supported by these wheels. Architecture support
 does not guarantee enough VRAM; this app's full generation tests used RTX 4090.
 Allow about 21 GB for the default four model files plus Python/dependencies and
 your outputs. Optional BF16 and GGUF image models are separate downloads.
+INSTALL.bat downloads all four required models (image, text encoder, VAE and
+prompt assistant) and verifies their SHA-256 hashes before declaring success.
+If access or downloading fails, setup stays incomplete. Rerun INSTALL.bat to
+resume; existing models, partial downloads and saved images are preserved.
 
 Double-click **RUN.bat** after setup. Generate from a description, or upload
 references and describe the changes you want. The local prompt assistant expands
@@ -50,7 +54,9 @@ not hard inpaint masks: the model may change pixels outside a box.
 
 ## Jobs, memory and updates
 
-One GPU job runs at a time. New requests queue; batches run sequentially and
+Press Ctrl+Enter or Generate to start. Generate turns grey while your job runs,
+with loading/sampling progress beside it, and returns to normal when finished.
+One GPU job runs at a time. Requests from other browsers queue; batches run sequentially and
 reuse one expanded caption. Stop cancels your browser's active/queued jobs.
 Unchanged requests also reuse their expanded caption on later runs; use Expand
 prompt only to force a fresh expansion.
@@ -85,8 +91,9 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 
 For automatic environment provisioning from the checkout, run the BATs in the
 `installer` folder; they create their app folder beside those BATs. No system
-Python or Git is needed by customers. `INSTALL.bat /dependencies-only` stops
-before model downloads. Set `GGF_UNATTENDED=1` only for controlled install checks.
+Python or Git is needed by customers. Required model installation cannot be
+skipped by the customer installer. Set `GGF_UNATTENDED=1` only for controlled
+install checks; it skips pauses, never models.
 
 Developer tests: `python -m unittest discover -s tests`. Real generation test
 recipes and measurements are in VALIDATION.md. Logs remain local in `logs`;

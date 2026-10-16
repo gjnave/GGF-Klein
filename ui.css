@@ -10,6 +10,9 @@ body {background:#07101f!important}
 [role=tablist] {gap:6px!important;flex-wrap:wrap!important} [role=tab] {color:#e8eef9!important;background:#192d47!important;border:1px solid #435570!important;border-radius:7px!important;min-height:44px;padding:10px 14px!important}
 [role=tab].selected,[role=tab][aria-selected=true] {background:#f5b942!important;color:#091425!important;font-weight:700!important}
 button.primary {background:#f5b942!important;color:#091425!important;font-weight:700!important}
+button.primary:disabled {background:#465267!important;color:#d8dfeb!important;cursor:not-allowed!important;opacity:1!important}
+.job-progress {padding:12px;border:1px solid #507b76;border-radius:10px;background:#14283a;color:#e8eef9;display:grid;gap:8px;overflow-wrap:anywhere}
+.job-progress progress {width:100%;height:16px;accent-color:#f5b942}
 button.secondary {background:#192d47!important;color:#e8eef9!important;border:1px solid #435570!important}
 button {min-height:44px} input,textarea,select {font-size:16px!important;color:#e8eef9!important;background:#091425!important}
 option,[role=option] {background:#111c2f!important;color:#e8eef9!important}

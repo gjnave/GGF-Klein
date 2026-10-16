@@ -76,7 +76,31 @@ class AppTests(unittest.TestCase):
 
     def test_progress_updates_both_status_locations(self):
         with patch.object(app, "poll", return_value=("RUNNING", 1, 2, 3, 4, 5, 6, 7)):
-            self.assertEqual(app.poll_from_ui("browser", ""), ("RUNNING", "RUNNING", 1, 2, 3, 4, 5, 6, 7))
+            self.assertEqual(app.poll_from_ui("browser", "")[:9], ("RUNNING", "RUNNING", 1, 2, 3, 4, 5, 6, 7))
+
+    def test_busy_progress_and_terminal_button_recovery(self):
+        for state in ("queued", "running", "done", "error", "cancelled"):
+            record = {"state": state, "created": 0, "message": "Image 1/1 · Creating image · step 4/16"}
+            with patch.object(app.jobs, "status", return_value=record):
+                generate, expand, progress = app.generation_feedback("browser")
+            busy = state in ("queued", "running")
+            self.assertEqual(generate["interactive"], not busy)
+            self.assertEqual(expand["interactive"], not busy)
+            self.assertEqual(bool(progress), busy)
+            if busy:
+                self.assertIn('value="4" max="16"', progress)
+
+    def test_loading_progress_indeterminate_and_escaped(self):
+        record = {"state": "running", "created": 0, "message": "Loading <model>"}
+        with patch.object(app.jobs, "status", return_value=record):
+            progress = app.generation_feedback("browser")[2]
+        self.assertIn("&lt;model&gt;", progress)
+        self.assertNotIn('value="', progress)
+
+    def test_duplicate_submit_rejected_before_queueing(self):
+        with patch.object(runtime, "status", return_value={"state": "running"}):
+            with self.assertRaisesRegex(ValueError, "already queued or running"):
+                runtime.submit("browser", {})
 
 
 if __name__ == "__main__":

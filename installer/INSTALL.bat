@@ -52,10 +52,10 @@ if errorlevel 1 goto failed
 if errorlevel 1 goto failed
 "%PY%" "%APP%\preflight.py"
 if errorlevel 1 goto failed
-if not defined GGF_SKIP_SOURCE_UPDATE "%PY%" "%APP%\update_app.py"
-if errorlevel 1 goto failed
-if /i "%~1"=="/dependencies-only" goto complete
+rem Source was already downloaded and installed above. Do not run an updater here:
+rem an unrelated update failure must not prevent the required model installation.
 echo.
+echo Installing all four REQUIRED models. Setup is not complete until they verify.
 echo Accept access at https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy
 echo Models download directly from the authorized repository, not from GGF.
 if defined HF_TOKEN goto download
@@ -65,10 +65,13 @@ echo Sign in with a Hugging Face read token from the account granted access.
 "%APP%\.venv\Scripts\hf.exe" auth login
 if errorlevel 1 goto failed
 :download
-"%PY%" "%APP%\model_manager.py"
+"%PY%" "%APP%\model_manager.py" --directory "%APP%\models" --components image text vae upsampler
+if errorlevel 1 goto failed
+"%PY%" "%APP%\model_manager.py" --directory "%APP%\models" --verify-only
 if errorlevel 1 goto failed
 :complete
-echo Setup complete. Double-click RUN.bat. Phone access and optional models are in Settings.
+echo Setup complete. All four required models are installed and verified.
+echo Double-click RUN.bat. Phone access and optional models are in Settings.
 if not defined GGF_UNATTENDED pause
 exit /b 0
 :source

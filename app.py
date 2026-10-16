@@ -1,10 +1,12 @@
 """GGF image creation/editing UI. CUDA inference is isolated in worker.py."""
 import argparse
 import base64
+import html
 import json
 import os
 from pathlib import Path
 import secrets
+import re
 import subprocess
 import sys
 import threading
@@ -257,7 +259,32 @@ def poll(key, last):
 
 def poll_from_ui(key, last):
     status, *outputs = poll(key, last)
-    return status, status, *outputs
+    return status, status, *outputs, *generation_feedback(key)
+
+
+def generation_feedback(key):
+    """Persistent feedback follows the owned job, including after reconnecting."""
+    record = jobs.status(key) if key else None
+    busy = bool(record and record["state"] in ("queued", "running"))
+    button = gr.update(interactive=not busy,
+                       value="Generating…" if busy else "Generate image · Ctrl+Enter")
+    if not busy:
+        return button, gr.update(interactive=True), ""
+    message = html.escape(record.get("message", "Working…"))
+    step = re.search(r"step (\d+)/(\d+)", record.get("message", ""))
+    fraction = ""
+    if step and int(step[2]) > 0:
+        fraction = f' value="{min(int(step[1]), int(step[2]))}" max="{int(step[2])}"'
+    elapsed = max(0, time.time() - record.get("started", record["created"]))
+    progress = (f'<div class="job-progress" role="status" aria-live="polite">'
+                f'<strong>{record["state"].title()} · {elapsed:.0f}s elapsed</strong>'
+                f'<progress aria-label="Generation progress"{fraction}></progress>'
+                f'<span>{message}</span></div>')
+    return button, gr.update(interactive=False), progress
+
+
+def submit_with_feedback(*values, action):
+    return (*submit_from_ui(*values, action=action), *generation_feedback(values[0]))
 
 
 def cancel_all(key):
@@ -412,7 +439,8 @@ def build_demo():
                             corner = gr.State(None)
                             layout_status = gr.Markdown("Preview the guide, then tap two opposite corners to add a box. You can also edit the table.")
                             layout = gr.Image(label="Layout guide", interactive=False, height=320)
-                        generate = gr.Button("Generate image / add to queue", variant="primary")
+                        generate = gr.Button("Generate image · Ctrl+Enter", variant="primary", elem_id="generate-button")
+                        generation_progress = gr.HTML("", elem_id="generation-progress")
                         generate_status = gr.Markdown("Ready. Describe an image, then press Generate.", elem_id="generate-status")
                         stop = gr.Button("Stop my running & queued jobs", variant="stop")
                     with gr.Column(min_width=280):
@@ -500,12 +528,25 @@ def build_demo():
         draw_layout.click(safe(preview_layout), [boxes, width, height], layout, queue=False)
         layout.select(select_box, [boxes, width, height, element_description, corner], [boxes, corner, layout, layout_status], queue=False)
         inputs = [key, *controls_list[:5], caption, enhance, refs, boxes]
-        generate.click(lambda *v: submit_from_ui(*v, action="generate"), inputs, [activity, generate_status, output, downloads, compare], queue=False)
-        expand.click(lambda *v: submit_from_ui(*v, action="enhance"), inputs, [activity, generate_status, output, downloads, compare], queue=False)
+        submission_outputs = [activity, generate_status, output, downloads, compare, generate, expand, generation_progress]
+        generate.click(lambda *v: submit_with_feedback(*v, action="generate"), inputs, submission_outputs, queue=False)
+        expand.click(lambda *v: submit_with_feedback(*v, action="enhance"), inputs, submission_outputs, queue=False)
+        demo.load(None, js="""() => {
+            if (window.__ggfGenerateShortcut) return;
+            window.__ggfGenerateShortcut = true;
+            document.addEventListener('keydown', event => {
+                if (!(event.ctrlKey && event.key === 'Enter') || event.isComposing) return;
+                const host = document.getElementById('generate-button');
+                const button = host?.matches('button') ? host : host?.querySelector('button');
+                if (!button || !button.getClientRects().length) return;
+                event.preventDefault();
+                if (!event.repeat && !button.disabled) button.click();
+            });
+        }""")
         stop.click(safe(lambda k: (lambda message: (message, message))(cancel_all(k))), key, [activity, generate_status], queue=False)
         history.select(reuse, [key, selected_result], selected_result, queue=False)
         use.click(safe(use_result), [key, selected_result, refs], [refs, gallery, tabs, reference_group, shape, width, height], queue=False)
-        gr.Timer(1).tick(poll_from_ui, [key, last], [activity, generate_status, output, downloads, compare, caption, history, queue_view, last], queue=False, show_progress="hidden")
+        gr.Timer(1).tick(poll_from_ui, [key, last], [activity, generate_status, output, downloads, compare, caption, history, queue_view, last, generate, expand, generation_progress], queue=False, show_progress="hidden")
     return demo.queue(default_concurrency_limit=4)
 
 

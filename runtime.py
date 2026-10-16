@@ -101,6 +101,9 @@ def submit(key, request):
     with GUARD:
         if STOPPING:
             raise ValueError("The app is shutting down. Restart it on the PC.")
+        current = status(key)
+        if current and current["state"] in ("queued", "running"):
+            raise ValueError("Your generation is already queued or running. Wait or press Stop first.")
         job_id = secrets.token_hex(12)
         now = time.time()
         record = {"id": job_id, "owner": key, "state": "queued", "message": "Queued",
