@@ -3,6 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 import zipfile
+from PIL import Image
 
 import app
 import network_settings
@@ -11,6 +12,15 @@ import update_app
 
 
 class AppTests(unittest.TestCase):
+    def test_import_does_not_start_or_recover_queue(self):
+        self.assertFalse(runtime.QUEUE_STARTED)
+
+    def test_portrait_reference_dimensions(self):
+        folder = Path(tempfile.mkdtemp(prefix="ggf-klein-portrait-test-"))
+        path = folder / "portrait.png"
+        Image.new("RGBA", (432, 768), (255, 0, 0, 128)).save(path)
+        self.assertEqual(app.reference_dimensions([str(path)]), (432, 768))
+
     def test_restore_stable_token(self):
         key = "b" * 48
         runtime.save_workspace(key, prompt="Saved prompt", width=512, height=768)
