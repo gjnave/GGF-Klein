@@ -122,7 +122,10 @@ worker.py consumes a request JSON and emits `__GGF__` JSON events.
 Completed: actual generation metrics, visual output review, editing, repeated
 jobs, cancellation, allocator-injected OOM handling, BF16 and GGUF trials,
 browser workspace persistence and a clean dependency-only CMD installer check.
-See GGF-Klein/VALIDATION.md for measurements and untested cases. CUDA 13 remains
-an optional optimization awaiting approval; current measured builds use cu128.
+See GGF-Klein/VALIDATION.md for measurements and untested cases. On October 16
+the user approved CUDA 13 wheels for this app only and named it
+GGF Flux 3 Klein - Dream. Exact pins include +cu130 so rerunning setup replaces
+an installed cu128 variant instead of incorrectly considering it satisfied.
+Historical measurements above used cu128; new measurements are recorded separately.
 Source mirrors: https://github.com/gjnave/GGF-Klein and
 https://codeberg.org/Cognibuild/GGF-Klein. No existing GGF website/app changed.

@@ -1,4 +1,4 @@
-# GGF Image Studio
+# GGF Flux 3 Klein - Dream
 
 Create and edit images locally with FLUX.3 Image Klein. This is a **development
 preview**, tested on an RTX 4090, not a claim that every NVIDIA card is supported.
@@ -69,7 +69,7 @@ Inside a source checkout, use the pinned UV Windows executable (0.12.13), then:
 
 ```bat
 uv venv --managed-python --python 3.12 .venv
-uv pip install --python .venv\Scripts\python.exe torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
+uv pip install --python .venv\Scripts\python.exe torch==2.11.0+cu130 torchvision==0.26.0+cu130 --index-url https://download.pytorch.org/whl/cu130
 uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 .venv\Scripts\python.exe preflight.py
 .venv\Scripts\hf.exe auth login

@@ -12,6 +12,8 @@ if not torch.cuda.is_available():
 print("GPU:", torch.cuda.get_device_name(0))
 print("Compute capability:", torch.cuda.get_device_capability(0))
 print("Wheel architectures:", torch.cuda.get_arch_list())
+if torch.cuda.get_device_capability(0) < (7, 5):
+    raise SystemExit("CUDA 13 requires Turing or newer NVIDIA hardware (RTX 20/30/40/50 architectures). This is not a VRAM guarantee.")
 x = torch.ones((32, 32), device="cuda")
 assert (x @ x).mean().item() == 32.0
 sys.path.insert(0, str(root / "vendor/comfy_core"))

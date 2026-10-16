@@ -1,4 +1,4 @@
-# GGF Image Studio
+# GGF Flux 3 Klein - Dream
 
 Create and edit images locally with FLUX.3 Image Klein. This is a **development
 preview**, tested on an RTX 4090, not a claim that every NVIDIA card is supported.
@@ -14,7 +14,11 @@ https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy
 
 The installer uses UV to download its own Windows x64 Python 3.12. It does not use
 or replace system Python. You need a compatible NVIDIA GPU and current driver;
-it installs the PyTorch CUDA runtime wheels, **not the CUDA Toolkit**.
+it installs the PyTorch CUDA 13 runtime wheels, **not the CUDA Toolkit**.
+CUDA 13 supports RTX 20/30/40/50-series GPU architectures, not only RTX 50.
+Use a current NVIDIA driver from the R580 family or newer. GTX 10-series and
+older architectures are not supported by these wheels. Architecture support
+does not guarantee enough VRAM; this app's full generation tests used RTX 4090.
 Allow about 21 GB for the default four model files plus Python/dependencies and
 your outputs. Optional BF16 and GGUF image models are separate downloads.
 
@@ -71,7 +75,7 @@ Inside a source checkout, use the pinned UV Windows executable (0.12.13), then:
 
 ```bat
 uv venv --managed-python --python 3.12 .venv
-uv pip install --python .venv\Scripts\python.exe torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
+uv pip install --python .venv\Scripts\python.exe torch==2.11.0+cu130 torchvision==0.26.0+cu130 --index-url https://download.pytorch.org/whl/cu130
 uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 .venv\Scripts\python.exe preflight.py
 .venv\Scripts\hf.exe auth login

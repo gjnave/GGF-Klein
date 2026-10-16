@@ -1,4 +1,4 @@
-# Torch / torchvision are installed separately from the official cu128 index.
+# Torch / torchvision are installed separately from the official cu130 index.
 gradio==6.29.0
 transformers==5.8.1
 tokenizers==0.22.2

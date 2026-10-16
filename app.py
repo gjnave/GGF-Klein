@@ -370,8 +370,8 @@ def theme():
 def build_demo():
     settings = network.read_settings()
     logo = base64.b64encode((ROOT / "assets/ggf-brain-logo.png").read_bytes()).decode()
-    with gr.Blocks(title="GGF Image Studio · Development") as demo:
-        gr.HTML(f'<header id="hero"><div><span class="eyebrow">GET GOING FAST · LOCAL AI</span><h1>GGF Image Studio</h1><p>Create an image. Change what you want.</p><nav><a href="https://getgoingfast.pro" target="_blank" rel="noopener">GetGoingFast.pro ↗</a><a href="https://youtube.com/@TheAIHobbyGuy" target="_blank" rel="noopener">The AI Hobby Guy ↗</a></nav></div><img src="data:image/png;base64,{logo}" alt="GGF"></header>')
+    with gr.Blocks(title="GGF Flux 3 Klein - Dream") as demo:
+        gr.HTML(f'<header id="hero"><div><span class="eyebrow">GET GOING FAST · LOCAL AI</span><h1>GGF Flux 3 Klein - Dream</h1><p>Create an image. Change what you want.</p><nav><a href="https://getgoingfast.pro" target="_blank" rel="noopener">GetGoingFast.pro ↗</a><a href="https://youtube.com/@TheAIHobbyGuy" target="_blank" rel="noopener">The AI Hobby Guy ↗</a></nav></div><img src="data:image/png;base64,{logo}" alt="GGF"></header>')
         activity = gr.Markdown("Ready. Development preview · INT8 inference verified on RTX 4090.", elem_id="activity")
         key, refs, selected_ref, last, selected_result = gr.State(""), gr.State([]), gr.State(0), gr.State(""), gr.State(None)
         browser_token = gr.Textbox(value="", visible=False)
