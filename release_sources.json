@@ -1,0 +1,7 @@
+{
+  "mirrors": [
+    {"name":"Codeberg","api":"https://codeberg.org/api/v1/repos/Cognibuild/GGF-Klein/branches/main","archive":"https://codeberg.org/Cognibuild/GGF-Klein/archive/{revision}.zip"},
+    {"name":"GitHub","api":"https://api.github.com/repos/gjnave/GGF-Klein/commits/main","archive":"https://github.com/gjnave/GGF-Klein/archive/{revision}.zip"}
+  ],
+  "required": ["app.py","worker.py","runtime.py","model_manager.py","requirements.txt","cuda-requirements.json","setup_environment.py","preflight.py","bootstrap_source.py","update_app.py","network_settings.py","release_sources.json","model-manifest.json","ui.css","assets/ggf-brain-logo.png","vendor/comfy_core/comfy/ldm/flux3/model.py","vendor/comfy_core/comfy/ldm/models/autoencoder.py","vendor/bfl/flux3/pup_prompts.json","vendor/gguf_core/patcher.py"]
+}

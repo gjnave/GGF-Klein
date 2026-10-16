@@ -1,0 +1,40 @@
+{
+  "repository": "black-forest-labs/flux-3-image-klein-comfy",
+  "revision": "5c9b714851dc072b04a23ef6d2d36421f5ccb3a0",
+  "components": {
+    "image": {
+      "file": "diffusion_models/flux3_image_klein_sd_int8_convrot.safetensors",
+      "bytes": 5827874779,
+      "sha256": "847d8933548afd93df4af2cac2498e70891bf28d9dae06d695f536992e168fe2"
+    },
+    "text": {
+      "file": "text_encoders/qwen3vl_4b_int8_convrot.safetensors",
+      "bytes": 4858559240,
+      "sha256": "32de113cbf8282b02cbff0794b637b9d6676da09314a1db5a30bcea9bf4ee01c"
+    },
+    "vae": {
+      "file": "vae/flux2-vae.safetensors",
+      "bytes": 336211292,
+      "sha256": "868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3"
+    },
+    "upsampler": {
+      "file": "text_encoders/qwen3.5_9b_flux3_prompt_upsampler_int8_convrot.safetensors",
+      "bytes": 9748113996,
+      "sha256": "cb8cb9b9dcd2569509de755dca54d96fd93a16a7aabfd2f4051f0a144230620f"
+    },
+    "bf16": {
+      "file": "diffusion_models/flux3_image_klein_sd_bf16.safetensors",
+      "bytes": 11097404512,
+      "sha256": "c3e9813cdd049c831c836b2e9db61150e49a93fc1a4c63b256494642fee0bd7c",
+      "repository": "black-forest-labs/flux-3-image-klein-comfy",
+      "revision": "5c9b714851dc072b04a23ef6d2d36421f5ccb3a0"
+    },
+    "gguf_q4": {
+      "file": "flux3_image_klein_sd_Q4_K_M.gguf",
+      "bytes": 3269858080,
+      "sha256": "c0dc60488f1d73517e60252d0d1ce24a8a9a19275ea669c0b96408a10fc871ac",
+      "repository": "Abiray/flux-3-image-klein-sd-GGUF",
+      "revision": "1960618efcfaeec728f22fd7f656a7034ee5f73b"
+    }
+  }
+}

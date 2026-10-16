@@ -1,0 +1,20 @@
+# Torch / torchvision are installed separately from the official cu128 index.
+gradio==6.29.0
+transformers==5.8.1
+tokenizers==0.22.2
+safetensors==0.8.0rc0
+comfy-kitchen==0.2.37
+comfy-aimdo==0.5.6
+torchsde
+einops
+sentencepiece
+scipy
+psutil
+pyyaml
+aiohttp
+requests
+blake3
+simpleeval
+av>=17
+accelerate==1.13.0
+gguf==0.19.0
