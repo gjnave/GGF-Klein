@@ -23,3 +23,4 @@ smoke*-request.json
 *.bin
 *.pt
 *.pth
+/installer/

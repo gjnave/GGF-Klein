@@ -1,32 +1,58 @@
+![GGF Flux 3 Klein - Dream](assets/fluxklein3-1.png)
+
 # GGF Flux 3 Klein - Dream
+
+## A Get Going Fast Application
+
+### [Quick Setup Helper → GetGoingFast.pro/tools/fluxklein3](https://getgoingfast.pro/tools/fluxklein3/)
+
+The guided Windows installer is a separate Get Going Fast member download. This public repository has the application source and manual setup instructions, not an installer BAT or model weights.
 
 Create and edit images locally with FLUX.3 Image Klein. This is a **development
 preview**, tested on an RTX 4090, not a claim that every NVIDIA card is supported.
 The PC does the work; optional phone access is the same interface in your browser.
 No separate ComfyUI installation or server is required.
 
-## Install and run
+## Manual installation from source
 
-Extract the slim installer ZIP into a writable folder on an internal SSD.
-Double-click **INSTALL.bat**, accept the original GGF disclaimer, and follow the
-Hugging Face sign-in instructions. Obtain access to the official model repository:
-https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy
+Use Windows 64-bit, a compatible NVIDIA GPU and current driver. Obtain access to the [official FLUX.3 model repository](https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy). Install [Git for Windows](https://git-scm.com/download/win) and [uv](https://docs.astral.sh/uv/getting-started/installation/). The steps below install PyTorch CUDA 13 wheels, **not the CUDA Toolkit**.
 
-The installer uses UV to download its own Windows x64 Python 3.12. It does not use
-or replace system Python. You need a compatible NVIDIA GPU and current driver;
-it installs the PyTorch CUDA 13 runtime wheels, **not the CUDA Toolkit**.
+1. Open **Command Prompt** in a writable folder on an internal SSD; clone the source and provision Python 3.12:
+
+   ```bat
+   git clone https://codeberg.org/Cognibuild/GGF-Klein.git
+   cd GGF-Klein
+   uv venv --managed-python --python 3.12 .venv
+   ```
+
+2. Install pinned CUDA PyTorch and the remaining dependencies; check CUDA and app imports:
+
+   ```bat
+   uv pip install --python .venv\Scripts\python.exe torch==2.11.0+cu130 torchvision==0.26.0+cu130 --index-url https://download.pytorch.org/whl/cu130
+   uv pip install --python .venv\Scripts\python.exe -r requirements.txt
+   uv pip check --python .venv\Scripts\python.exe
+   .venv\Scripts\python.exe preflight.py
+   ```
+
+3. Sign into Hugging Face on the PC after access is granted. Download and verify all four required model components:
+
+   ```bat
+   .venv\Scripts\hf.exe auth login
+   .venv\Scripts\python.exe model_manager.py --directory models --components image text vae upsampler
+   .venv\Scripts\python.exe model_manager.py --directory models --verify-only
+   ```
+
+4. Start the app with `.venv\Scripts\python.exe app.py`. The separate member installer automates these steps and stays outside this source repository.
+
 CUDA 13 supports RTX 20/30/40/50-series GPU architectures, not only RTX 50.
 Use a current NVIDIA driver from the R580 family or newer. GTX 10-series and
 older architectures are not supported by these wheels. Architecture support
 does not guarantee enough VRAM; this app's full generation tests used RTX 4090.
 Allow about 21 GB for the default four model files plus Python/dependencies and
 your outputs. Optional BF16 and GGUF image models are separate downloads.
-INSTALL.bat downloads all four required models (image, text encoder, VAE and
-prompt assistant) and verifies their SHA-256 hashes before declaring success.
-If access or downloading fails, setup stays incomplete. Rerun INSTALL.bat to
-resume; existing models, partial downloads and saved images are preserved.
+The required models are image, text encoder, VAE and prompt assistant. Verify their SHA-256 hashes before running; if access or downloading fails, retry the failed manual step. Existing models, partial downloads and saved images are preserved.
 
-Double-click **RUN.bat** after setup. Generate from a description, or upload
+Start the app after setup. Generate from a description, or upload
 references and describe the changes you want. The local prompt assistant expands
 your request; you can inspect and edit that caption under image options. To use
 an edited caption unchanged, disable expansion. The distilled checkpoint uses
@@ -72,33 +98,12 @@ image model. There is no arbitrary 16 GB minimum; smaller GPUs remain unverified
 Settings checks source-repository revisions. Update & restart downloads a
 host-generated archive from Codeberg, falling back to GitHub. It backs up source,
 updates dependencies and preserves models, settings, workspaces and outputs.
-UPDATE.bat provides the same flow with the app closed. No maintained source ZIP
+The separate member package provides an update BAT for closed-app updates. No maintained source ZIP
 is required for updates. Source mirror verification is recorded in the handoff.
 
-## Source installation / development
+## Source development
 
-Inside a source checkout, use the pinned UV Windows executable (0.12.13), then:
-
-```bat
-uv venv --managed-python --python 3.12 .venv
-uv pip install --python .venv\Scripts\python.exe torch==2.11.0+cu130 torchvision==0.26.0+cu130 --index-url https://download.pytorch.org/whl/cu130
-uv pip install --python .venv\Scripts\python.exe -r requirements.txt
-.venv\Scripts\python.exe preflight.py
-.venv\Scripts\hf.exe auth login
-.venv\Scripts\python.exe model_manager.py
-.venv\Scripts\python.exe app.py
-```
-
-For automatic environment provisioning from the checkout, run the BATs in the
-`installer` folder; they create their app folder beside those BATs. No system
-Python or Git is needed by customers. Required model installation cannot be
-skipped by the customer installer. Set `GGF_UNATTENDED=1` only for controlled
-install checks; it skips pauses, never models.
-
-Developer tests: `python -m unittest discover -s tests`. Real generation test
-recipes and measurements are in VALIDATION.md. Logs remain local in `logs`;
-Settings exports a small diagnostics ZIP that excludes credentials, images and
-prompts. Logs themselves can contain prompts/local paths; review before sharing.
+Developer tests: `.venv\Scripts\python.exe -m unittest discover -s tests`. Real generation test recipes and measurements are in VALIDATION.md. Logs remain local in `logs`; Settings exports a small diagnostics ZIP that excludes credentials, images and prompts. Logs themselves can contain prompts/local paths; review before sharing.
 
 ## Remove or relocate
 
